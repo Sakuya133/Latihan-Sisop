@@ -9,6 +9,7 @@ Trabowo langsung mendownload file ZIP tersebut dan menyimpannya di penyimpanan l
 
 ### Jawaban:
 File film di unzip menggunakan kode
+# Tranbowo-a.c
 ```c
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,11 +42,16 @@ int main() {
     return 0;
 }
 ```
-
+Direktori sebelum film.zip di unzip
+# foto
+Direktori setelah film.zip di unzip
+# foto
+# output
+# foto
 
 
 ### **b. Pemilihan Film Secara Acak**
-
+### Soal: 
 Setelah berhasil melakukan unzip, Trabowo iseng melakukan pemilihan secara acak/random pada gambar-gambar film tersebut untuk menentukan film pertama yang akan dia tonton malam ini.
 
 **Format Output:**
@@ -53,9 +59,48 @@ Setelah berhasil melakukan unzip, Trabowo iseng melakukan pemilihan secara acak/
 ```
 Film for Trabowo & Peddy: ‘<no_namafilm_genre.jpg>’
 ```
+### Jawaban:
+Pemilihan film secara acak akan dilakukan oleh file
+# Trabowo-b.c
+```c
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <time.h>
+
+void solve(char* dirBruh) {
+    DIR* dir = opendir(dirBruh);
+    struct dirent* bruh;
+    char* files[1000];
+    int JumFil = 0;
+    while ((bruh = readdir(dir)) != NULL) {
+        if (strcmp(bruh->d_name, ".") != 0 ) {
+            files[JumFil++] = bruh->d_name;  
+        }
+    }
+    closedir(dir);
+    if (JumFil > 0) {
+        srand(time(NULL));
+        int ran = rand() % JumFil;  
+        printf("Film for Trabowo & Peddy: ‘<%s>’\n", files[ran]);
+    } else {
+        printf("lah kok ga ada?\n");
+    }
+}
+
+int main() {
+    solve("film"); 
+    return 0;
+}
+```
+# output
+# foto
+# foto
+# foto
 
 ### **c. Memilah Film Berdasarkan Genre**
-
+### Soal
 Karena Trabowo sangat perfeksionis dan ingin semuanya tertata rapi, dia memutuskan untuk mengorganisir film-film tersebut berdasarkan genre. Dia membuat 3 direktori utama di dalam folder `~/film`, yaitu:
 
 - **FilmHorror**
@@ -79,55 +124,169 @@ Jumlah film drama: <jumlahfilm>
 Genre dengan jumlah film terbanyak: <namagenre>
 ```
 
-### **d. Pengarsipan Film**
+### Trabowo-c.c
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <time.h>
+// 3 dir 
+// di saring
+// trabowo dari depan, pedydy dari belakang
+typedef struct {
+    char filename[256];
+    char genre[20];
+} Movie;
 
+void mkbjer(char *dir_name) {
+    struct stat st = {0};
+    if (stat(dir_name, &st) == -1) { if (mkdir(dir_name, 0700) != 0) { perror("bruh");} }}
+
+
+void recap(char *worker, char *filename, char *genre) {
+    FILE *logFile = fopen("recap.txt", "a");
+    if (logFile == NULL) {
+        perror("Fbruh");
+        return;
+    }
+
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    fprintf(logFile, "[%02d-%02d-%04d %02d:%02d:%02d] %s: %s telah dipindahkan ke %s\n",
+            tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, worker, filename, genre);
+    fclose(logFile);
+}
+void pindah(char *file, char *desti) {
+    char pathhh[512];
+    char dir_path[512];
+    char desti_path[512];
+
+    snprintf(pathhh, sizeof(pathhh), "./film/%s", file);
+    snprintf(desti_path, sizeof(desti_path), "./film/%s/%s", desti, file);
+    snprintf(dir_path, sizeof(dir_path), "./film/%s", desti);
+    mkbjer(dir_path); 
+    if (rename(pathhh, desti_path) != 0) {
+        perror("bruh");
+    }
+}
+void saring(char *dir_path, Movie *muvi, int *count) {
+    DIR *dir = opendir(dir_path);
+    struct dirent *entry;
+    if (dir == NULL) {
+        perror("dir bruh");
+        return;
+    }
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG) {  
+            strcpy(muvi[*count].filename, entry->d_name);
+            if (strstr(entry->d_name, "horror") != NULL) {
+                strcpy(muvi[*count].genre, "FilmHorror");
+            } else if (strstr(entry->d_name, "animasi") != NULL) {
+                strcpy(muvi[*count].genre, "FilmAnimasi");
+            } else if (strstr(entry->d_name, "drama") != NULL) {
+                strcpy(muvi[*count].genre, "FilmDrama");
+            } else {
+                continue;  
+            }
+            (*count)++;
+        }
+    }
+    closedir(dir);
+}
+
+int main() {
+    Movie muvi[1000];
+    int muviCou = 0;
+    char *dir_path = "./film";
+    saring(dir_path, muvi, &muviCou);
+    int i = 0, j = muviCou - 1;
+    int horrorCou = 0, animasiCou = 0, dramaCou = 0;
+    while (i <= j) {
+        if (strstr(muvi[i].genre, "FilmHorror") != NULL) {
+            horrorCou++;
+        } else if (strstr(muvi[i].genre, "FilmAnimasi") != NULL) {
+            animasiCou++;
+        } else if (strstr(muvi[i].genre, "FilmDrama") != NULL) {
+            dramaCou++;
+        }
+        pindah(muvi[i].filename, muvi[i].genre);
+        recap("Trabowo", muvi[i].filename, muvi[i].genre);
+        i++;
+        if (i <= j) {
+            if (strstr(muvi[j].genre, "FilmHorror") != NULL) {
+                horrorCou++;
+            } else if (strstr(muvi[j].genre, "FilmAnimasi") != NULL) {
+                animasiCou++;
+            } else if (strstr(muvi[j].genre, "FilmDrama") != NULL) {
+                dramaCou++;
+            }
+            pindah(muvi[j].filename, muvi[j].genre);
+            recap("Peddy", muvi[j].filename, muvi[j].genre);
+            j--;
+        }
+    }
+    FILE *fileTOT = fopen("total.txt", "w");
+    if (fileTOT == NULL) {
+        perror("bruh");
+        return 1;
+    }
+    fprintf(fileTOT, "Jumlah film horror: %d\n", horrorCou);
+    fprintf(fileTOT, "Jumlah film animasi: %d\n", animasiCou);
+    fprintf(fileTOT, "Jumlah film drama: %d\n", dramaCou);
+    if (horrorCou >= animasiCou && horrorCou >= dramaCou) {
+        fprintf(fileTOT, "Film terbanyak: FilmHorror\n");
+    } else if (animasiCou >= horrorCou && animasiCou >= dramaCou) {
+        fprintf(fileTOT, "Film terbanyak: FilmAnimasi\n");
+    } else {
+        fprintf(fileTOT, "Film terbanyak: FilmDrama\n");
+    }
+    fclose(fileTOT);
+    return 0;
+}
+/*   /\_/\
+*    (= ._.)
+*   / >  \>
+*/
+// sorry gabut mas hehehehehhee
+```
+### **d. Pengarsipan Film**
+### Soal
 Setelah semua film tertata dengan rapi dan dikelompokkan dalam direktori masing-masing berdasarkan genre, Trabowo ingin mengarsipkan ketiga direktori tersebut ke dalam format **ZIP** agar tidak memakan terlalu banyak ruang di komputernya.
 
----
+### Jawaban
+File di zip dengan
+# Trabowo-d.c
+```c
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
-# Trabowo & Peddy Movie Night
+int main() {
+    char *zipFi = "filmdone.zip";
+    char *bruh[] = {"zip", "-r", zipFi, "film", NULL};  
 
-Trabowo and his friend, Peddy, are enjoying Saturday night at home while looking for exciting movies to watch. They found a ZIP file containing posters of very interesting movies. The file can be downloaded from **[Google Drive](https://drive.google.com/file/d/1nP5kjCi9ReDk5ILgnM7UCnrQwFH67Z9B/view?usp=sharing)**. Out of curiosity about the movies, they decided to create an automatic system to manage all these files in a structured and efficient manner. Here are the tasks that need to be done to realize this system:
+    pid_t pid = fork();
 
-### **a. Unzip the ZIP File**
+    if (pid == -1) {
+        perror("fork failed");
+        return 1;
+    } else if (pid == 0) {
+        execvp("zip", bruh);
+        perror("gagal");
+        return 1;
+    } else {
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+            printf("Zip DONE: %s\n", zipFi);
+        } else {
+            printf("GAGAL\n");
+        }
+    }
 
-Trabowo immediately downloaded the ZIP file and saved it to his local computer storage. However, since the file is in ZIP format, Trabowo needs to **unzip** it to see the list of exciting movies inside.
-
-### **b. Random Movie Selection**
-
-After successfully unzipping, Trabowo randomly selected one of the movie posters to determine the first movie he will watch tonight.
-
-**Output Format:**
-
-```
-Film for Trabowo & Peddy: ‘<no_namafilm_genre.jpg>’
-```
-
-### **c. Sorting Movies by Genre**
-
-Because Trabowo is very perfectionist and wants everything to be neatly arranged, he decided to organize the movies by genre. He created 3 main directories inside the `~/film` folder, namely:
-
-- **FilmHorror**
-- **FilmAnimasi**
-- **FilmDrama**
-
-After that, he started moving the movie posters into the appropriate folders based on their genres. However, Trabowo is too old to do it himself, so he asked Peddy for help. They efficiently divided the tasks by working simultaneously (overlapping) and splitting them equally. Trabowo will start from the beginning, while Peddy will start from the end. For example, if there are 10 images, Trabowo will start from the first image, the second image, etc., and Peddy will start from the tenth image, the ninth image, etc. Then create a file "recap.txt" that logs every time they finish a task.
-
-Log format example:
-
-```
-[15-04-2025 13:44:59] Peddy: 50_toystory_animasi.jpg telah dipindahkan ke FilmAnimasi
-```
-
-When they finish moving all the movies, Trabowo and Peddy also need to count the number of movies in each category and write it in the **`total.txt`** file. The format of that file is:
+    return 0;
+}
 
 ```
-Jumlah film horror: <jumlahfilm>
-Jumlah film animasi: <jumlahfilm>
-Jumlah film drama: <jumlahfilm>
-Genre dengan jumlah film terbanyak: <namagenre>
-```
-
-### **d. Archiving Movies**
-
-After all the movies are neatly arranged and grouped in their respective directories by genre, Trabowo wants to archive the three directories into a **ZIP** format to save space on his computer.
